@@ -1,0 +1,54 @@
+﻿namespace FsTracker.OpenGL
+{
+<#
+  var glFuncs = new [] {
+    "glCreateShaderProgramv"    ,
+    "glGenProgramPipelines"     ,
+    "glBindProgramPipeline"     ,
+    "glUseProgramStages"        ,
+    "glGetProgramiv"            ,
+    "glGetProgramInfoLog"       ,
+    "glProgramUniform1f"        ,
+    "glProgramUniform2f"        ,
+    "glActiveTexture"           ,
+    "glBindSampler"             ,
+    "glProgramUniform1i"        ,
+    "glGenerateMipmap"          ,
+    "glGenFramebuffers"         ,
+    "glBindFramebuffer"         ,
+    "glFramebufferRenderbuffer" ,
+    "glGenRenderbuffers"        ,
+    "glBindRenderbuffer"        ,
+    "glRenderbufferStorage"     ,
+    "glBlitFramebuffer"         ,
+  };
+#>
+  using System;
+  using System.Runtime.InteropServices;
+
+  public static partial class Native
+  {
+    public class OpenGlFunctions
+    {
+<#
+  foreach (var glFunc in glFuncs) {
+#>
+      public readonly Delegate_<#=RightPad(26, glFunc)#> <#=RightPad(26, glFunc)#> = LoadOpenGlFunction<Delegate_<#=glFunc#>>(@"<#=glFunc#>");
+<#
+  }
+#>
+    }
+  }
+}
+<#+
+  static string RightPad(int min, string s) {
+    if (s.Length >= min) 
+    {
+      return s;
+    }
+    else
+    {
+      return s + new string(' ', min - s.Length);
+    }
+  }
+#>
