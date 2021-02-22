@@ -28,25 +28,64 @@ module Common =
 
   let now () = (float sw.ElapsedMilliseconds/1000.)*1.0<sec>
 
-[<RequireQualifiedAccess>]
-type ShaderInputValue = 
-  | V1        of float32
-  | V2        of Vector2
-  | V3        of Vector3
-  | V4        of Vector4
-  | Sampler2D of Unit
+type ShaderInputValue =
+  | V1    of float32
+  | V2    of Vector2
+  | V3    of Vector3
+  | V4    of Vector4
 
-type ShaderInput = {
-  Key   : string
-  Value : ShaderInputValue
+type Environment = 
+  {
+    Time        : float32
+    Resolution  : Vector2
+  }
+
+type ShaderInput =
+  | Const       of ShaderInputValue
+  | Env         of (Environment -> ShaderInputValue)
+  | Unary       of ShaderInput*(ShaderInputValue -> ShaderInputValue)
+  | Binary      of ShaderInput*ShaderInput*(ShaderInputValue -> ShaderInputValue -> ShaderInputValue)
+
+module ShaderInputs =
+  let time = Env <| fun e -> 
+    V1 e.Time
+
+  let resolution = Env <| fun e -> 
+    V1 e.Time
+
+type VertexShader = {
+  Name    : string
+  Source  : string
 }
 
-type ShaderEffect = {
-  Inputs : ShaderInput array
+type FragmentShader = {
+  Name    : string
+  Source  : string
 }
 
 type Module = 
   {
-    FragmentShader : string
+    FragmentShader  : string
+  }
+
+type Step =
+  {
+    Effects   : (Environment -> int*string) array
+    Inputs    : (Environment -> string*ShaderInput) array
+  }
+
+type Track = 
+  {
+    Name  : string
+    Steps : Step array
+  }
+
+type Module_ = 
+  {
+    Name      : string
+    Vertex    : VertexShader
+    Mixer     : int*FragmentShader
+    Effects   : FragmentShader array
+    Sequence  : Track array
   }
 

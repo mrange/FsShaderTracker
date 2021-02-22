@@ -78,6 +78,8 @@ q=0.5*inVer+0.5;
     else
       id
 
+  type Invoker = delegate of unit -> unit
+
   let run (m : Module) =
     Application.SetHighDpiMode HighDpiMode.SystemAware |> ignore
     Application.EnableVisualStyles ()
@@ -85,7 +87,7 @@ q=0.5*inVer+0.5;
 
     use form = new Form ()
     form.ClientSize <- Size (1920, 1200)
-    form.Text       <- "Hello"
+    form.Text       <- "FsShaderTracker"
 
     let hwnd        = form.Handle
     let hdc         = GetDC hwnd
@@ -130,17 +132,37 @@ q=0.5*inVer+0.5;
     opengl.glUseProgramStages.Invoke (pid, GL_VERTEX_SHADER_BIT, vsid)
     opengl.glUseProgramStages.Invoke (pid, GL_FRAGMENT_SHADER_BIT, fsid)
 
+    let start = now () |> float
+
+    let invalidator = Invoker (fun () -> InvalidateRect (hwnd, 0n, false) |> ignore)
+
+    let delayedInvoke (i : Invoker) = form.BeginInvoke i |> ignore
+    let delayedInvalidate () = delayedInvoke invalidator
+
+    let mutable localInSec = floor start
+    let mutable localFrameCount = 0
+    let mutable totalFrameCount = 0
+
     let onPaint o e =
       let size = form.ClientSize
       glViewport (0, 0, size.Width, size.Height)
       opengl.glBindFramebuffer.Invoke (GL_DRAW_FRAMEBUFFER, 0u)
-      opengl.glProgramUniform1f.Invoke (fsid, 0 , 0.F)
-      opengl.glProgramUniform1f.Invoke (fsid, 0 , 0.F)
-      opengl.glProgramUniform2f.Invoke (fsid, 0 , float32 size.Width, float32 size.Height)
+      let now = now () |> float
+      let nowInSec = floor now
+      let time = now - start
+      localFrameCount <- localFrameCount + 1
+      totalFrameCount <- totalFrameCount + 1
+      if nowInSec > localInSec then
+        let sustainedFps = float totalFrameCount / time |> round |> int
+        form.Text <- sprintf "FsShaderTracker - FPS: %d/%d" localFrameCount sustainedFps
+        localInSec <- nowInSec
+        localFrameCount <- 0
+      opengl.glProgramUniform1f.Invoke (fsid, 0, float32 time)
+      opengl.glProgramUniform2f.Invoke (fsid, 1, float32 size.Width, float32 size.Height)
       glRects (-1s, -1s, 1s, 1s)
       SwapBuffers hdc |> ignore
+      delayedInvalidate ()
 
-      ()
     form.Paint.AddHandler (PaintEventHandler onPaint)
 
     Application.Run form

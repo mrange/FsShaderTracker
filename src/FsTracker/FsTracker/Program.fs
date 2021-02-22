@@ -12,8 +12,10 @@ layout (location=0) out vec4 fragColor;
 layout (location=0) uniform float time;
 layout (location=1) uniform vec2 resolution;
 
+#define PSIN(x) (0.5+0.5*sin(x))
+
 void main(void) {
-  fragColor = vec4(1.0, q.x, q.y, 1.0);
+  fragColor = vec4(PSIN(time), q.x, q.y, 1.0);
 }
 """
 
